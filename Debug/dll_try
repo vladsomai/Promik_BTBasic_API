@@ -1,0 +1,61 @@
+!!!!    4    0    1 1624544696   0000                                         
+dllload "d:\_DESKTOP\_VISUAL_STUDIO\Promik_BTBasic_API\Debug\Promik_BTBasic_API.dll",DLL_Handle,Err
+dim ReturnString$[2048]
+
+if Err then
+ print "Error loading dll"
+ print errm$(Err)
+else
+ print DLL_Handle
+ print
+end if
+
+Param$ = "C:\\FlashTask_Pro\\bin\\FTEngine.exe"
+dllcall DLL_Handle,"LoadEngine",ReturnString$,ReturnNum;Param$
+print ReturnString$
+if ReturnNum then goto END
+
+Param$ = "C:\\FlashTask_Pro\\license\\license.lic"
+dllcall DLL_Handle,"LoadLicense",ReturnString$,ReturnNum;Param$
+print ReturnString$
+if ReturnNum then goto END
+
+CONFIGURE:
+dllcall DLL_Handle,"ConfigureProgrammer1",ReturnString$,ReturnNum;""
+print ReturnString$
+if ReturnNum then goto END
+
+Param$ = "C:\\FlashTask_Pro\\jobs\\Continental_AZV_CID.job"
+!Param$ = "C:\\FlashTask_Pro\\jobs\\cid_1pcb.job"
+dllcall DLL_Handle,"LoadJob",ReturnString$,ReturnNum;Param$
+print ReturnString$
+if ReturnNum then goto END
+
+PROGRAMMING:
+dllcall DLL_Handle,"PrepareProgramming",ReturnString$,ReturnNum;""
+print ReturnString$
+if ReturnNum then goto END
+
+dllcall DLL_Handle,"ExecuteProgramming",ReturnString$,ReturnNum;""
+print ReturnString$
+if ReturnNum then goto END
+
+
+print
+print "In BTBasic test..."
+print
+wait 2
+
+goto PROGRAMMING
+
+END:
+dllcall DLL_Handle,"DestroyFlashTask",ReturnString$,ReturnNum;""
+print ReturnString$
+print errm$(ReturnNum)
+
+dllunload
+print "DLL unloaded"
+end
+
+
+
