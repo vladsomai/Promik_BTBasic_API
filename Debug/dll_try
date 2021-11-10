@@ -1,61 +1,132 @@
-!!!!    4    0    1 1624544696   0000                                         
-dllload "d:\_DESKTOP\_VISUAL_STUDIO\Promik_BTBasic_API\Debug\Promik_BTBasic_API.dll",DLL_Handle,Err
-dim ReturnString$[2048]
+!!!!    4    0    1 1635239411   0000                                         
 
-if Err then
- print "Error loading dll"
- print errm$(Err)
-else
- print DLL_Handle
- print
-end if
+call InitPromik
 
-Param$ = "C:\\FlashTask_Pro\\bin\\FTEngine.exe"
-dllcall DLL_Handle,"LoadEngine",ReturnString$,ReturnNum;Param$
-print ReturnString$
-if ReturnNum then goto END
-
-Param$ = "C:\\FlashTask_Pro\\license\\license.lic"
-dllcall DLL_Handle,"LoadLicense",ReturnString$,ReturnNum;Param$
-print ReturnString$
-if ReturnNum then goto END
-
-CONFIGURE:
-dllcall DLL_Handle,"ConfigureProgrammer1",ReturnString$,ReturnNum;""
-print ReturnString$
-if ReturnNum then goto END
-
-Param$ = "C:\\FlashTask_Pro\\jobs\\Continental_AZV_CID.job"
-!Param$ = "C:\\FlashTask_Pro\\jobs\\cid_1pcb.job"
-dllcall DLL_Handle,"LoadJob",ReturnString$,ReturnNum;Param$
-print ReturnString$
-if ReturnNum then goto END
-
-PROGRAMMING:
-dllcall DLL_Handle,"PrepareProgramming",ReturnString$,ReturnNum;""
-print ReturnString$
-if ReturnNum then goto END
-
-dllcall DLL_Handle,"ExecuteProgramming",ReturnString$,ReturnNum;""
-print ReturnString$
-if ReturnNum then goto END
-
+call Flashing
 
 print
 print "In BTBasic test..."
 print
 wait 2
-
-goto PROGRAMMING
-
-END:
-dllcall DLL_Handle,"DestroyFlashTask",ReturnString$,ReturnNum;""
-print ReturnString$
-print errm$(ReturnNum)
-
-dllunload
-print "DLL unloaded"
+call UnloadPromik
 end
 
+sub Flashing
+global Promik_DLL_Handle
+
+Test_name$="Prepare programming"
+print tab(5); Test_name$
+dllcall Promik_DLL_Handle,"PrepareProgramming",ReturnString$,ReturnNum;""
+print tab(5); ReturnString$
+call PrintPromikResult(ReturnNum)
+
+Test_name$="Executing programming"
+print tab(5); Test_name$
+dllcall Promik_DLL_Handle,"ExecuteProgramming",ReturnString$,ReturnNum;""
+print tab(5); ReturnString$
+call PrintPromikResult(ReturnNum)
+subend
+
+sub InitPromik
+global Promik_DLL_Handle
+
+print tab(5); "Loading Promik API..."
+Path$ = "d:\_DESKTOP\_VISUAL_STUDIO\Promik_BTBasic_API\Debug\Promik_BTBasic_API.dll"
+dllload Path$,Promik_DLL_Handle,Err
+
+if Err then
+    print tab(5); chr$(27) & "&v3S" ; "Error loading dll"
+    print errm$(Err)
+    call UnloadPromik
+    stop
+else
+    print tab(5); chr$(27) & "&v2S" ;"Promik DLL Loaded"
+end if
+
+Test_name$ =  "Create flash task"
+print tab(5); Test_name$
+dllcall Promik_DLL_Handle,"CreateFlashTask",ReturnString$,ReturnNum;""
+print tab(5); ReturnString$
+call PrintPromikResult(ReturnNum)
+if ReturnNum then
+    print tab(5); chr$(27) & "&v3S" ; "Error loading engine"
+    call UnloadPromik
+    stop
+end if
+wait .5
+   call UnloadPromik
+   stop
+
+Test_name$ =  "Loading engine"
+print tab(5); Test_name$
+dllcall Promik_DLL_Handle,"LoadEngine",ReturnString$,ReturnNum;""
+print tab(5); ReturnString$
+call PrintPromikResult(ReturnNum)
+if ReturnNum then
+    print tab(5); chr$(27) & "&v3S" ; "Error loading engine"
+    call UnloadPromik
+    stop
+end if
+wait .5
+
+dllcall Promik_DLL_Handle,"LoadLicense",ReturnString$,ReturnNum;""
+print tab(5); ReturnString$
+call PrintPromikResult(ReturnNum)
+if ReturnNum then
+    print tab(5); chr$(27) & "&v3S" ; "Error loading license"
+    call UnloadPromik
+    stop
+end if
+wait .5
+
+dllcall Promik_DLL_Handle,"ConfigureProgrammer1",ReturnString$,ReturnNum;""
+print tab(5); ReturnString$
+call PrintPromikResult(ReturnNum)
+if ReturnNum then
+    print tab(5); chr$(27) & "&v3S" ; "Error configuring programmer"
+    call UnloadPromik
+    stop
+end if
+wait .5
+
+dllcall Promik_DLL_Handle,"LoadJob",ReturnString$,ReturnNum;""
+print tab(5); ReturnString$
+call PrintPromikResult(ReturnNum)
+if ReturnNum then
+    print tab(5); chr$(27) & "&v3S" ; "Error loading job"
+    call UnloadPromik
+    stop
+end if
+wait .5
+subend
 
 
+sub UnloadPromik
+global Promik_DLL_Handle
+
+print tab(5); "Unloading Promik API"
+dllcall Promik_DLL_Handle,"DestroyFlashTask",ReturnString$,ReturnNum;""
+print tab(5); ReturnString$
+call PrintPromikResult(ReturnNum)
+if ReturnNum then
+    print tab(5); chr$(27) & "&v3S" ; "Error destroying promik task"
+end if
+dllunload
+print tab(5); chr$(27) & "&v2S" ; "DLL unloaded"
+subend
+
+
+sub PrintPromikResult(ErrorCode)
+!!
+!!USE THIS SUBROUTINE TO CHECK IF THE FLASHING COMMUNICATION PASSED
+!!
+!!PARAMETERS ARE:  ErrorCode = return value of promik function
+
+ if not ErrorCode then
+  print tab(5); chr$(27) & "&v2S" ; "PASS!"
+    else
+  print tab(5); chr$(27) & "&v1S" ; "FAIL!"
+
+ end if
+
+subend

@@ -5,7 +5,7 @@
 #include <iostream>
 #include <string>
 
-static IFlashTask* flash_task = CreateFlashTask();
+IFlashTask* flash_task = nullptr;
 static bool debugMode = false;
 
 /////////////////////////////////////////////////////////////////////////
@@ -40,7 +40,6 @@ DllExport EXT_DLL_Result BTBasic_DLL_Call(char* functionName, char* parameters,
 		tokens = strtok_s(next, ",", &next);
 		argc++;
 	}
-
 	//Handle each function here
 	if (strcmp(functionName, "LoadEngine") == 0)
 	{
@@ -56,6 +55,26 @@ DllExport EXT_DLL_Result BTBasic_DLL_Call(char* functionName, char* parameters,
 
 		messageToReturn = "Engine could not be loaded! Check the path you provided.";
 	    sizeOfMessage = strlen(messageToReturn) + 1;
+		strcpy_s(returnString, sizeOfMessage, messageToReturn);
+
+		return EXT_DLL_Result::EXT_DLL_Result_Error;
+	}
+	else if (strcmp(functionName, "CreateFlashTask") == 0)
+	{
+		flash_task = CreateFlashTask();
+
+		if (flash_task != nullptr)
+		{
+
+			messageToReturn = "Flash task created!";
+			sizeOfMessage = strlen(messageToReturn) + 1;
+			strcpy_s(returnString, sizeOfMessage, messageToReturn);
+
+			return EXT_DLL_Result::EXT_DLL_Result_OK;
+		}
+
+		messageToReturn = "Cannot create flash task! Please check if Promik is connected.";
+		sizeOfMessage = strlen(messageToReturn) + 1;
 		strcpy_s(returnString, sizeOfMessage, messageToReturn);
 
 		return EXT_DLL_Result::EXT_DLL_Result_Error;
@@ -76,23 +95,13 @@ DllExport EXT_DLL_Result BTBasic_DLL_Call(char* functionName, char* parameters,
 
 		return EXT_DLL_Result::EXT_DLL_Result_Error;
 	}
-	else if (strcmp(functionName, "ConfigureProgrammer0") == 0)
+	else if (strcmp(functionName, "ConfigureProgrammer") == 0)
 	{
-		LPCSTR programmer_ip = "192.168.1.1";
-		ConfigureProgrammer(flash_task, 0, programmer_ip);
+		size_t programmer_id = atoi(argv[0]);
+		ConfigureProgrammer(flash_task, programmer_id, argv[1]);
 
-		messageToReturn = "Programmer on slot 0 configured!";
-		sizeOfMessage = strlen(messageToReturn) + 1;
-		strcpy_s(returnString, sizeOfMessage, messageToReturn);
-
-		return EXT_DLL_Result::EXT_DLL_Result_OK;
-	}
-	else if (strcmp(functionName, "ConfigureProgrammer1") == 0)
-	{
-		LPCSTR programmer_ip = "192.168.1.1";
-		ConfigureProgrammer(flash_task, 1, programmer_ip);
-
-		messageToReturn = "Programmer on slot 1 configured!";
+		std::string tempMessage = "Programmer on slot " + std::to_string(programmer_id) + " configured!";
+		messageToReturn = tempMessage.c_str();
 		sizeOfMessage = strlen(messageToReturn) + 1;
 		strcpy_s(returnString, sizeOfMessage, messageToReturn);
 
